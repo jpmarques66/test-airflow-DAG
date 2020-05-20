@@ -14,6 +14,22 @@ airflow:
   service:
     type: LoadBalancer
   config:
+    #AIRFLOW__CORE__SECURE_MODE: "True"
+    #AIRFLOW__API__AUTH_BACKEND: "airflow.api.auth.backend.deny_all"
+    #AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "False"
+    #AIRFLOW__WEBSERVER__RBAC: "False"
+
+    ## DAGS
+    AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: "30"
+    AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+
+    ## Email (SMTP)
+    AIRFLOW__EMAIL__EMAIL_BACKEND: "airflow.utils.email.send_email_smtp"
+    AIRFLOW__SMTP__SMTP_HOST: "smtpmail.example.com"
+    AIRFLOW__SMTP__SMTP_STARTTLS: "False"
+    AIRFLOW__SMTP__SMTP_SSL: "False"
+    AIRFLOW__SMTP__SMTP_PORT: "25"
+    #AIRFLOW__SMTP__SMTP_MAIL_FROM: "admin@example.com"
   #  AIRFLOW__KUBERNETES__WORKER_CONTAINER_REPOSITORY: airflow-docker-local
   #  AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG: 1
   #  AIRFLOW__KUBERNETES__WORKER_CONTAINER_IMAGE_PULL_POLICY: Never
@@ -23,6 +39,21 @@ airflow:
   #  AIRFLOW__KUBERNETES__NAMESPACE: airflow
 
   #  AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:airflow@airflow-postgresql:5432/airflow
+dags:
+  git:
+    url: ssh://git@github.com:jpmarques66/test-airflow-DAG.git
+    repoHost: github.com
+    #secret: airflow-git-keys
+    #kubectl create secret generic airflow-git-keys \
+    #  --from-file=id_rsa=~/.ssh/id_rsa \
+    #  --from-file=id_rsa.pub=~/.ssh/id_rsa.pub \
+    #  --from-file=known_hosts=~/.ssh/known_hosts
+
+    #privateKeyName: id_rsa
+
+    gitSync:
+      enabled: true
+      refreshTime: 60
 
 persistence:
   enabled: true
