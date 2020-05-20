@@ -41,8 +41,8 @@ airflow:
   #  AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:airflow@airflow-postgresql:5432/airflow
 dags:
   git:
-    url: ssh://git@github.com:jpmarques66/test-airflow-DAG.git
-    repoHost: github.com
+    url: https://github.com/jpmarques66/test-airflow-DAG.git
+    ref: master
     #secret: airflow-git-keys
     #kubectl create secret generic airflow-git-keys \
     #  --from-file=id_rsa=~/.ssh/id_rsa \
@@ -54,10 +54,6 @@ dags:
     gitSync:
       enabled: true
       refreshTime: 60
-
-persistence:
-  enabled: true
-  existingClaim: ''
 
 workers:
   enabled: false
