@@ -20,6 +20,7 @@ airflow:
     #AIRFLOW__WEBSERVER__RBAC: "False"
 
     ## DAGS
+    AIRFLOW__CORE__EXECUTOR: KubernetesExecutor
     AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: "30"
     AIRFLOW__CORE__LOAD_EXAMPLES: "False"
 
@@ -29,6 +30,13 @@ airflow:
     AIRFLOW__SMTP__SMTP_STARTTLS: "False"
     AIRFLOW__SMTP__SMTP_SSL: "False"
     AIRFLOW__SMTP__SMTP_PORT: "25"
+    AIRFLOW__KUBERNETES__KUBE_CLIENT_REQUEST_ARGS: '{\"_request_timeout\":[60, 60]}'
+
+    AIRFLOW__KUBERNETES__GIT_REPO: https://github.com/jpmarques66/test-airflow-DAG.git
+    AIRFLOW__KUBERNETES__GIT_BRANCH: master
+    AIRFLOW__KUBERNETES__GIT_DAGS_FOLDER_MOUNT_POINT: /usr/local/airflow/dags
+
+
     #AIRFLOW__SMTP__SMTP_MAIL_FROM: "admin@example.com"
   #  AIRFLOW__KUBERNETES__WORKER_CONTAINER_REPOSITORY: airflow-docker-local
   #  AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG: 1
@@ -40,6 +48,10 @@ airflow:
 
   #  AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:airflow@airflow-postgresql:5432/airflow
 dags:
+  ##
+  ## mount path for persistent volume.
+  ## Note that this location is referred to in airflow.cfg, so if you change it, you must update airflow.cfg accordingly.
+  path: /usr/local/airflow/dags
   git:
     url: https://github.com/jpmarques66/test-airflow-DAG.git
     ref: master
@@ -52,8 +64,60 @@ dags:
     #privateKeyName: id_rsa
 
     gitSync:
+      ## Turns on the side car container
       enabled: true
+      image:
+        repository: alpine/git
+        tag: latest
+        pullPolicy: IfNotPresent
       refreshTime: 60
+
+  initContainer:
+    ## Fetch the source code when the pods starts
+    enabled: false
+    ## Image for the init container (any image with git will do)
+    image:
+      ## docker-airflow image
+      repository: alpine/git
+      ## image tag
+      tag: 1.0.12
+      ## Image pull policy
+      ## values: Always or IfNotPresent
+      pullPolicy: IfNotPresent
+    ## install requirements.txt dependencies automatically
+    installRequirements: true
+    ## Path to mount dags-data volume to
+    mountPath: /dags
+    ## Path to add to `mountPath` where we clone/sync git to. Include leading /
+    ## example: "/subdirWithDags"
+    syncSubPath: ""
+    ## Custom resource configuration
+    resources: {}
+
+
+##
+## Storage configuration for DAGs
+persistence:
+  ##
+  ## enable persistance storage
+  enabled: true
+  ##
+  ## Existing claim to use
+  # existingClaim: nil
+  ## Existing claim's subPath to use, e.g. "dags" (optional)
+  # subPath: ""
+  ##
+  ## Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  # storageClass: default
+  accessMode: ReadWriteOnce
+  ##
+  ## Persistant storage size request
+  size: 1Gi
 
 workers:
   enabled: false
