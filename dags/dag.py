@@ -3,6 +3,8 @@ from datetime import timedelta
 from airflow import DAG
 # Operators; we need this to operate!
 from airflow.operators.bash_operator import BashOperator
+from airflow.contrib.operators.kubernetes_pod_operator import KubernetesPodOperator
+
 from airflow.utils.dates import days_ago
 
 # These args will get passed on to each operator
@@ -44,13 +46,29 @@ t1 = BashOperator(
     dag=dag,
 )
 
-t2 = BashOperator(
-    task_id='sleep',
-    depends_on_past=False,
-    bash_command='sleep 5',
-    retries=3,
-    dag=dag,
-)
+t1 = KubernetesPodOperator(namespace='test-airflow',
+                           image="python:3.6",
+                           cmds=["python", "-c"],
+                           arguments=["print('hello world')"],
+                           labels={"foo": "bar"},
+                           name="passing-test",
+                           task_id="passing-task",
+                           get_logs=True,
+                           dag=dag,
+                           in_cluster=True
+                           )
+
+t2 = KubernetesPodOperator(namespace='test-airflow',
+                           image="python:3.6",
+                           cmds=["sleep", "5"],
+                           labels={"foo": "bar"},
+                           name="passing-test",
+                           task_id="passing-task",
+                           get_logs=True,
+                           dag=dag,
+                           in_cluster=True
+                           )
+
 dag.doc_md = __doc__
 
 t1.doc_md = """\
@@ -68,12 +86,15 @@ templated_command = """
 {% endfor %}
 """
 
-t3 = BashOperator(
-    task_id='templated',
-    depends_on_past=False,
-    bash_command=templated_command,
-    params={'my_param': 'Parameter I passed in'},
-    dag=dag,
-)
-
+t3 = KubernetesPodOperator(namespace='test-airflow',
+                           image="python:3.6",
+                           cmds=["sleep", "5"],
+                           labels={"foo": "bar"},
+                           name="passing-test",
+                           task_id="passing-task",
+                           get_logs=True,
+                           depends_on_past=False,
+                           dag=dag,
+                           in_cluster=True
+                           )
 t1 >> [t2, t3]
