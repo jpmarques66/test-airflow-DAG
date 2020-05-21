@@ -5,14 +5,14 @@ airflow:
     repository: joaopmarques66/airflow
     ##
     ## image tag
-    tag: 1.0
+    tag: 1.2
     ##
     ## Image pull policy
     ## values: Always or IfNotPresent
     pullPolicy: IfNotPresent
   executor: Kubernetes
   service:
-    type: LoadBalancer
+    type: NodePort
   config:
     #AIRFLOW__CORE__SECURE_MODE: "True"
     #AIRFLOW__API__AUTH_BACKEND: "airflow.api.auth.backend.deny_all"
@@ -30,7 +30,9 @@ airflow:
     AIRFLOW__SMTP__SMTP_STARTTLS: "False"
     AIRFLOW__SMTP__SMTP_SSL: "False"
     AIRFLOW__SMTP__SMTP_PORT: "25"
-    AIRFLOW__KUBERNETES__KUBE_CLIENT_REQUEST_ARGS: '{\"_request_timeout\":[60, 60]}'
+    AIRFLOW__KUBERNETES__KUBE_CLIENT_REQUEST_ARGS: '{\"_request_timeout\":[50, 50]}'
+    AIRFLOW__KUBERNETES__NAMESPACE: test-airflow
+
 
     AIRFLOW__KUBERNETES__GIT_REPO: https://github.com/jpmarques66/test-airflow-DAG.git
     AIRFLOW__KUBERNETES__GIT_BRANCH: master
@@ -118,6 +120,187 @@ persistence:
   ##
   ## Persistant storage size request
   size: 1Gi
+
+
+web:
+  ## Enable DAG serialization and do not add git-sync containers to web pods. Completely supported in Airflow >= 1.10.10
+  serializeDAGs: false
+  ##
+  ## Set AIRFLOW__WEBSERVER__BASE_URL
+  ## Path should match Ingress configuration
+  baseUrl: "http://localhost:8080"
+  resources: {}
+    # limits:
+    #   cpu: "300m"
+    #   memory: "1Gi"
+    # requests:
+    #   cpu: "100m"
+    #   memory: "512Mi"
+  ##
+  ## Labels for the web deployment
+  labels: {}
+  ##
+  ## Pod Labels for the web deployment
+  podLabels: {}
+  ##
+  ## Annotations for the web deployment
+  annotations: {}
+  ##
+  ## Pod Annotations for the web deployment
+  podAnnotations: {}
+  ##
+  initialStartupDelay: "60"
+  initialDelaySeconds: "360"
+  minReadySeconds: 120
+  readinessProbe:
+    scheme: HTTP
+    periodSeconds: 60
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 5
+  livenessProbe:
+    scheme: HTTP
+    periodSeconds: 60
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 5
+
+
+  ## Support Node, affinity and tolerations for web pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#taints-and-tolerations-beta-feature
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  ##
+  ## Directory in which to mount secrets on webserver nodes.
+  secretsDir: /var/airflow/secrets
+  ##
+  ## Secrets which will be mounted as a file at `secretsDir/<secret name>`.
+  secrets: []
+
+
+##
+## Ingress configuration
+ingress:
+  ##
+  ## enable ingress
+  ## Note: If you want to change url prefix for web ui or flower even if you do not use ingress,
+  ## you can change web.baseUrl and flower.urlPrefix
+  enabled: true
+  ##
+  ## Configure the Ingress webserver endpoint
+  web:
+    ## NOTE: This requires an airflow version > 1.9.x
+    ## For the moment (March 2018) this is **not** available on official package, you will have
+    ## to use an image where airflow has been updated to its current HEAD.
+    ## You can use the following one:
+    ##  stibbons31/docker-airflow-dev:2.0dev
+    ##
+    ## if path is '/airflow':
+    ##  - UI will be accessible at 'http://mycompany.com/airflow/admin'
+    ##  - Healthcheck is at 'http://mycompany.com/airflow/health'
+    ##  - api is at 'http://mycompany.com/airflow/api'
+    ## NOTE: do NOT keep trailing slash. For root configuration, set and empty string
+    path: "/airflow"
+    ##
+    ## Ingress hostname for the webserver
+    host: "localhost"
+    ##
+    ## Annotations for the webserver
+    ## Airflow webserver handles relative path completely, just let your load balancer give the HTTP
+    ## header like the requested URL (no special configuration neeed)
+    annotations: {}
+      ##
+      ## Example for Traefik:
+      # traefik.frontend.rule.type: PathPrefix
+      # kubernetes.io/ingress.class: traefik
+    ##
+    ## Configure the web liveness path.
+    ## Defaults to the templated value `{{ ingress.web.path }}/health`
+    livenessPath:
+    tls:
+      ## Set to "true" to enable TLS termination at the ingress
+      enabled: false
+      ## If enabled, set "secretName" to the secret containing the TLS private key and certificate
+      ## Example:
+      ## secretName: example-com-crt
+    precedingPaths:
+      ## Different http paths to add to the ingress before the default path
+      ## Example:
+      ## - path: "/*"
+      ##   serviceName: "ssl-redirect"
+      ##   servicePort: "use-annotation"
+    succeedingPaths:
+      ## Different http paths to add to the ingress after the default path
+      ## Example:
+      ## - path: "/*"
+      ##   serviceName: "ssl-redirect"
+      ##   servicePort: "use-annotation"
+
+  ##
+  ## Configure the flower Ingress endpoint
+  flower:
+    ##
+    ## If flower is '/airflow/flower':
+    ##  - Flower UI is at 'http://mycompany.com/airflow/flower'
+    ## NOTE: you need to have a reverse proxy/load balancer able to do URL rewrite in order to have
+    ## flower mounted on other path than root. Flower only does half the job in url prefixing: it
+    ## only generates the right URL/relative paths in the **returned HTML files**, but expects the
+    ## request to have been be at the root.
+    ## That's why we need a reverse proxy/load balancer that is able to strip the path
+    ## NOTE: do NOT keep trailing slash. For root configuration, set and empty string
+    path: "/airflow/flower"
+    ##
+    ## Configure the liveness path. Keep to "/" for Flower >= jan 2018.
+    ## For previous version, enter the same path than in the 'path' key
+    ## NOTE: keep the trailing slash.
+    livenessPath: /
+    ##
+    ## hostname for flower
+    host: "localhost"
+    ##
+    ## Annotation for the Flower endpoint
+    ##
+    ## ==== SKIP THE FOLLOWING BLOCK IF YOU HAVE FLOWER > JANUARY 2018 =============================
+    ## Please note their is a small difference between the way Airflow Web server and Flower handles
+    ## URL prefixes in HTTP requests:
+    ## Flower wants HTTP header to behave like there was no URL prefix, and but still generates
+    ## the right URL in html pages thanks to its `--url-prefix` parameter
+    ##
+    ##    Extracted from the Flower documentation:
+    ##    (https://github.com/mher/flower/blob/master/docs/config.rst#url_prefix)
+    ##
+    ##        To access Flower on http://example.com/flower run it with:
+    ##            flower --url-prefix=/flower
+    ##
+    ##        Use the following nginx configuration:
+    ##            server {
+    ##              listen 80;
+    ##              server_name example.com;
+    ##
+    ##              location /flower/ {
+    ##                rewrite ^/flower/(.*)$ /$1 break;
+    ##                proxy_pass http://example.com:5555;
+    ##                proxy_set_header Host $host;
+    ##              }
+    ##            }
+    ## ==== IF YOU HAVE FLOWER > JANUARY 2018, NO MORE NEED TO STRIP THE PREFIX ====================
+    annotations: {}
+      ##
+      ## NOTE: it is important here to have your reverse proxy strip the path/rewrite the URL
+      ## Example for Traefik:
+      # traefik.frontend.rule.type: PathPrefix       ## Flower >= Jan 2018
+      # traefik.frontend.rule.type: PathPrefixStrip  ## Flower < Jan 2018
+      # kubernetes.io/ingress.class: traefik
+    tls:
+      ## Set to "true" to enable TLS termination at the ingress
+      enabled: false
+      ## If enabled, set "secretName" to the secret containing the TLS private key and certificate
+      ## Example:
+      ## secretName: example-com-crt
+
 
 workers:
   enabled: false
