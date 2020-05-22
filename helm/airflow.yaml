@@ -21,6 +21,7 @@ airflow:
 
     ## DAGS
     AIRFLOW__CORE__EXECUTOR: KubernetesExecutor
+
     AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: "30"
     AIRFLOW__CORE__LOAD_EXAMPLES: "False"
 
@@ -42,13 +43,26 @@ airflow:
     #AIRFLOW__SMTP__SMTP_MAIL_FROM: "admin@example.com"
     AIRFLOW__KUBERNETES__WORKER_CONTAINER_REPOSITORY: python
     AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG: 3.6
+    AIRFLOW__KUBERNETES__DELETE_WORKER_PODS: False
+    AIRFLOW__KUBERNETES__DELETE_WORKER_PODS_ON_FAILURE: False
     AIRFLOW__KUBERNETES__WORKER_CONTAINER_IMAGE_PULL_POLICY: IfNotPresent
 
   #  AIRFLOW__KUBERNETES__WORKER_SERVICE_ACCOUNT_NAME: airflow
-  #  AIRFLOW__KUBERNETES__DAGS_VOLUME_CLAIM: airflow
+    AIRFLOW__KUBERNETES__DAGS_VOLUME_CLAIM: airflow
+    AIRFLOW__KUBERNETES__LOGS_VOLUME_CLAIM: airflow-logs
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: False
+    AIRFLOW__SCHEDULER__CATCHUP_BY_DEFAULT: False
+
   #  AIRFLOW__KUBERNETES__NAMESPACE: airflow
 
   #  AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:airflow@airflow-postgresql:5432/airflow
+
+logsPersistence:
+  enabled: true
+  existingClaim: ''
+  accessMode: ReadWriteOnce
+  size: 1Gi
+
 dags:
   ##
   ## mount path for persistent volume.
