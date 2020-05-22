@@ -1,4 +1,5 @@
 from airflow import DAG
+from airflow import utils
 from datetime import datetime, timedelta
 from airflow.contrib.operators.kubernetes_pod_operator import KubernetesPodOperator
 from airflow.operators.dummy_operator import DummyOperator
@@ -7,7 +8,7 @@ from airflow.operators.dummy_operator import DummyOperator
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime.utcnow(),
+    'start_date': utils.dates.days_ago(7),
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
