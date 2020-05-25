@@ -46,3 +46,9 @@ failing = KubernetesPodOperator(namespace='test-airflow',
 
 passing.set_upstream(start)
 failing.set_upstream(start)
+
+#helm install airflow \
+#     --set images.airflow.repository=my-dags \
+#     --set images.airflow.tag=0.0.2 \
+#     --set images.airflow.pullPolicy=Never \
+#    astronomer/airflow
