@@ -1,0 +1,10 @@
+images:
+  airflow:
+    repository: dags
+    tag: 0.0.1
+    pullPolicy: Never
+env:
+  - name: AIRFLOW__CORE__PARALLELISM
+    value: 4
+  - name: AIRFLOW__CORE__DAG_CONCURRENCY
+    value: 1
