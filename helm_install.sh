@@ -1,3 +1,3 @@
 #bin/bash
 
-helm install airflow astronomer/airflow -f ./helm/config.yaml
+helm install airflow MARJOA/airflow-chart -f ./helm/config.yaml
