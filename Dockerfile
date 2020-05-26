@@ -1,1 +1,1 @@
-FROM joaopmarques66/base-airflow:0.0.1
+FROM joaopmarques66/base-airflow:0.0.8

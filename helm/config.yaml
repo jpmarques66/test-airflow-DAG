@@ -2,7 +2,7 @@ uid: 1000
 images:
   airflow:
     repository: joaopmarques66/dags
-    tag: 0.0.3
+    tag: 0.0.8
     pullPolicy: IfNotPresent
 rbacEnabled: True
 webserver:
@@ -26,24 +26,19 @@ env:
 scheduler:
   resources:
     limits:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 500m
+      memory: 2048Mi
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 500m
+      memory: 1024Mi
 
 postgresql:
-  securityContext:
-    enabled: true
-    fsGroup: 1000
-    runAsUser: 1000
-
-  resources:
-    requests:
-      memory: 128Mi
-      cpu: 250m
-
+  ##
+  ## Init containers parameters:
+  ## volumePermissions: Change the owner of the persist volume mountpoint to RunAsUser:fsGroup
+  ##
   volumePermissions:
+    enabled: false
     ## Init container Security Context
     ## Note: the chown of the data folder is done to securityContext.runAsUser
     ## and not the below volumePermissions.securityContext.runAsUser
@@ -54,28 +49,89 @@ postgresql:
     ## pod securityContext.enabled=false and shmVolume.chmod.enabled=false
     ##
     securityContext:
-      runAsUser: 1000
-  metrics:
-    ## Define additional custom metrics
-    ## ref: https://github.com/wrouesnel/postgres_exporter#adding-new-metrics-via-a-config-file
-    # customMetrics:
-    #   pg_database:
-    #     query: "SELECT d.datname AS name, CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT') THEN pg_catalog.pg_database_size(d.datname) ELSE 0 END AS size FROM pg_catalog.pg_database d where datname not in ('template0', 'template1', 'postgres')"
-    #     metrics:
-    #       - name:
-    #           usage: "LABEL"
-    #           description: "Name of the database"
-    #       - size_bytes:
-    #           usage: "GAUGE"
-    #           description: "Size of the database in bytes"
-    ## Pod Security Context
-    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-    ##
-    securityContext:
-      enabled: false
-      runAsUser: 1000
+      runAsUser: auto
+
+  ## Pod Security Context
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+  ##
+  securityContext:
+    enabled: false
+    fsGroup: 1000
+    runAsUser: 1000
+
+  ## Creates role for ServiceAccount
+  ## Required for PSP
+  rbac:
+    create: false
+
+  ## PostgreSQL admin password (used when `postgresqlUsername` is not `postgres`)
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#creating-a-database-user-on-first-run (see note!)
+  # postgresqlPostgresPassword:
+
+  ## PostgreSQL user (has superuser privileges if username is `postgres`)
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#setting-the-root-password-on-first-run
+  postgresqlUsername: postgres
+
+  ## PostgreSQL password
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#setting-the-root-password-on-first-run
+  ##
+  # postgresqlPassword:
+
+
+  ## PostgreSQL service configuration
+  service:
+    ## PosgresSQL service type
+    type: ClusterIP
+    # clusterIP: None
+    port: 5432
+
+
+  ## PostgreSQL data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
   persistence:
-    enabled: False
-  shmVolume:
-    chmod:
-      enabled: False
+    enabled: false
+    ## A manually managed Persistent Volume and Claim
+    ## If defined, PVC must be created manually before volume will be bound
+    ## The value is evaluated as a template, so, for example, the name can depend on .Release or .Chart
+    ##
+    # existingClaim:
+
+    ## The path the volume will be mounted at, useful when using different
+    ## PostgreSQL images.
+    ##
+    #mountPath: /bitnami/postgresql
+
+    ## The subdirectory of the volume to mount to, useful in dev environments
+    ## and one PV for multiple services.
+    ##
+    #subPath: ""
+
+    # storageClass: "-"
+    #accessModes:
+    #  - ReadWriteOnce
+    #size: 8Gi
+
+
+  ## Configure resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ##
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 250m
+
+
+  networkPolicy:
+    ## Enable creation of NetworkPolicy resources. Only Ingress traffic is filtered for now.
+    ##
+    enabled: false
+
+  ## Configure metrics exporter
+  ##
+  metrics:
+    enabled: false
