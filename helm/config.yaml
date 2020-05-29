@@ -4,17 +4,20 @@ images:
     repository: joaopmarques66/dags
     tag: 0.0.8
     pullPolicy: IfNotPresent
+dags:
+  repository: https://github.com/jpmarques66/test-airflow-DAG.git
+  subPath: /dags
 rbacEnabled: True
 webserver:
   defaultUser:
     enabled: False
   resources:
     limits:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 500m
+      memory: 2048Mi
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 500m
+      memory: 2048Mi
 statsd:
   enabled: False
 env:
@@ -30,7 +33,7 @@ scheduler:
       memory: 2048Mi
     requests:
       cpu: 500m
-      memory: 1024Mi
+      memory: 1536Mi
 
 postgresql:
   ##
