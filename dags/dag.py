@@ -25,6 +25,13 @@ start = DummyOperator(task_id='run_this_first', dag=dag)
 #    "fsGroup": 1000,
 #    "fsGroupChangePolicy": "OnRootMismatch",
 # }
+
+resources = {
+    'limit_cpu': 0.25,
+    'limit_memory': '512Mi',
+    'request_cpu': '250m',
+    'request_memory': '256Mi',
+}
 passing = KubernetesPodOperator(namespace='test-airflow',
                                 image="python:3.6",
                                 cmds=["python", "-c"],
@@ -33,11 +40,7 @@ passing = KubernetesPodOperator(namespace='test-airflow',
                                 name="passing-test",
                                 task_id="passing-task",
                                 get_logs=True,
-                                resources={
-                                    "limit_cpu": 0.25,
-                                    "limit_memory": "512Mi",
-                                    "request_cpu": "250m",
-                                    "request_memory": "512Mi"},
+                                resources=resources,
                                 dag=dag,
                                 )
 
@@ -48,11 +51,7 @@ failing = KubernetesPodOperator(namespace='test-airflow',
                                 labels={"foo": "bar"},
                                 name="fail",
                                 task_id="failing-task",
-                                resources={
-                                    "limit_cpu": 0.25,
-                                    "limit_memory": "512Mi",
-                                    "request_cpu": "250m",
-                                    "request_memory": "512Mi"},
+                                resources=resources,
                                 get_logs=True,
                                 dag=dag
                                 )
