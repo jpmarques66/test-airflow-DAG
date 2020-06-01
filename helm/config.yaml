@@ -1,12 +1,8 @@
 uid: 1000
-images:
-  airflow:
-    repository: joaopmarques66/dags
-    tag: 0.0.8
-    pullPolicy: IfNotPresent
 dags:
   repository: https://github.com/jpmarques66/test-airflow-DAG.git
   subPath: /dags
+
 rbacEnabled: True
 webserver:
   defaultUser:

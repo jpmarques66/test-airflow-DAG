@@ -33,6 +33,11 @@ passing = KubernetesPodOperator(namespace='test-airflow',
                                 name="passing-test",
                                 task_id="passing-task",
                                 get_logs=True,
+                                resources={
+                                    "limit_cpu": 0.25,
+                                    "limit_memory": "512Mi",
+                                    "request_cpu": "250m",
+                                    "request_memory": "512Mi"},
                                 dag=dag,
                                 )
 
@@ -43,6 +48,11 @@ failing = KubernetesPodOperator(namespace='test-airflow',
                                 labels={"foo": "bar"},
                                 name="fail",
                                 task_id="failing-task",
+                                resources={
+                                    "limit_cpu": 0.25,
+                                    "limit_memory": "512Mi",
+                                    "request_cpu": "250m",
+                                    "request_memory": "512Mi"},
                                 get_logs=True,
                                 dag=dag
                                 )
