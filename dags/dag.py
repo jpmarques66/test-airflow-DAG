@@ -19,7 +19,12 @@ dag = DAG(
     'kubernetes_sample', default_args=default_args, schedule_interval=timedelta(minutes=10))
 
 start = DummyOperator(task_id='run_this_first', dag=dag)
-
+# security_context={
+#    'runAsUser': 1000,
+#    "runAsGroup": 1000,
+#    "fsGroup": 1000,
+#    "fsGroupChangePolicy": "OnRootMismatch",
+# }
 passing = KubernetesPodOperator(namespace='test-airflow',
                                 image="python:3.6",
                                 cmds=["python", "-c"],
@@ -29,12 +34,6 @@ passing = KubernetesPodOperator(namespace='test-airflow',
                                 task_id="passing-task",
                                 get_logs=True,
                                 dag=dag,
-                                security_context={
-                                    "runAsUser": 1000,
-                                    "runAsGroup": 1000,
-                                    "fsGroup": 1000,
-                                    "fsGroupChangePolicy": "OnRootMismatch",
-                                }
                                 )
 
 failing = KubernetesPodOperator(namespace='test-airflow',
