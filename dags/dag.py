@@ -3,6 +3,7 @@ from airflow import utils
 from datetime import datetime, timedelta
 from airflow.contrib.operators.kubernetes_pod_operator import KubernetesPodOperator
 from airflow.operators.dummy_operator import DummyOperator
+from airflow.contrib.kubernetes.pod import Resources
 
 default_args = {
     'owner': 'airflow',
@@ -26,12 +27,13 @@ start = DummyOperator(task_id='run_this_first', dag=dag)
 #    "fsGroupChangePolicy": "OnRootMismatch",
 # }
 
-resources = {
-    'limit_cpu': 0.25,
-    'limit_memory': '512Mi',
-    'request_cpu': '250m',
-    'request_memory': '256Mi',
-}
+resources = Resources(
+    request_memory='256Mi',
+    request_cpu='250m',
+    limit_memory='512Mi',
+    limit_cpu=0.25,
+    limit_gpu=None
+)
 passing = KubernetesPodOperator(namespace='test-airflow',
                                 image="python:3.6",
                                 cmds=["python", "-c"],
