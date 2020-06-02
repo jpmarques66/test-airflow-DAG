@@ -70,6 +70,9 @@ for i in range(5):
         python_callable=my_sleeping_function,
         op_kwargs={'random_base': float(i) / 10},
         dag=dag,
+        executor_config={
+            "KubernetesExecutor": {"request_memory": "256Mi",
+                                   "limit_memory": "512Mi", }}
     )
 
     run_this >> task
