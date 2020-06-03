@@ -24,6 +24,7 @@ from builtins import range
 from pprint import pprint
 
 from airflow.utils.dates import days_ago
+from airflow.contrib.operators.kubernetes_pod_operator import KubernetesPodOperator
 
 from airflow.models import DAG
 from airflow.operators.python_operator import PythonOperator
@@ -54,9 +55,11 @@ run_this = PythonOperator(
     python_callable=print_context,
     dag=dag,
     executor_config={
-            "KubernetesExecutor": {"request_memory": "200Mi",
-                                   "limit_memory": "500Mi", }}
+        "KubernetesExecutor": {"request_memory": "200Mi",
+                               "limit_memory": "500Mi", }}
 )
+
+
 # [END howto_operator_python]
 
 
@@ -67,16 +70,30 @@ def my_sleeping_function(random_base):
 
 
 # Generate 5 sleeping tasks, sleeping from 0.0 to 0.4 seconds respectively
-for i in range(5):
-    task = PythonOperator(
-        task_id='sleep_for_' + str(i),
-        python_callable=my_sleeping_function,
-        op_kwargs={'random_base': float(i) / 10},
-        dag=dag,
-        executor_config={
-            "KubernetesExecutor": {"request_memory": "256Mi",
-                                   "limit_memory": "512Mi", }}
-    )
+# for i in range(5):
+#    task = PythonOperator(
+#        task_id='sleep_for_' + str(i),
+#        python_callable=my_sleeping_function,
+#        op_kwargs={'random_base': float(i) / 10},
+#        dag=dag,
+#        executor_config={
+#            "KubernetesExecutor": {"request_memory": "256Mi",
+#                                   "limit_memory": "512Mi", }}
+#    )
+#
+#    run_this >> task
 
-    run_this >> task
+passing = KubernetesPodOperator(namespace='test-airflow',
+                                image="python:3.6",
+                                cmds=["python", "-c"],
+                                arguments=["print('hello world')"],
+                                labels={"foo": "bar"},
+                                name="passing-test",
+                                task_id="passing-task",
+                                get_logs=True,
+                                executor_config={
+                                    "KubernetesExecutor": {"request_memory": "256Mi",
+                                                           "limit_memory": "512Mi", }},
+                                dag=dag,
+                                )
 # [END howto_operator_python_kwargs]
