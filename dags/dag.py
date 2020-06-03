@@ -54,8 +54,8 @@ run_this = PythonOperator(
     python_callable=print_context,
     dag=dag,
     executor_config={
-            "KubernetesExecutor": {"request_memory": "256Mi",
-                                   "limit_memory": "512Mi", }}
+            "KubernetesExecutor": {"request_memory": "200Mi",
+                                   "limit_memory": "500Mi", }}
 )
 # [END howto_operator_python]
 
